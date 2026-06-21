@@ -18,4 +18,13 @@ describe("filter presets", () => {
     expect(params.grayscale).toBeGreaterThan(0.8);
     expect(params.grain).toBeGreaterThan(0);
   });
+
+  it("uses filmic curve and texture parameters for natural vintage grading", () => {
+    const params = blendFilterParams(filterPresets.realOldPhoto, 100);
+
+    expect(params.blackLift).toBeGreaterThan(0);
+    expect(params.highlightRollOff).toBeGreaterThan(0);
+    expect(params.paperTint).toBeGreaterThan(0);
+    expect(params.scratches).toBeGreaterThan(0);
+  });
 });

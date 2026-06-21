@@ -186,21 +186,10 @@ function drawAgedTextLine(
   context.save();
   context.lineJoin = "round";
   context.miterLimit = 2;
-  context.strokeStyle = "rgba(54, 0, 0, 0.72)";
-  context.lineWidth = Math.max(1, fontSize * 0.045);
+  context.strokeStyle = "rgba(58, 0, 0, 0.72)";
+  context.lineWidth = Math.max(1, fontSize * 0.055);
   drawTextWithMode(context, line, centerX, baselineY, letterSpacing, "stroke");
-
-  context.globalAlpha = 0.9;
-  drawCenteredTextLine(context, line, centerX, baselineY, letterSpacing);
-
-  context.globalAlpha = 0.16;
-  context.fillStyle = "rgba(92, 18, 18, 0.9)";
-  drawCenteredTextLine(context, line, centerX + 0.7, baselineY - 0.5, letterSpacing);
-
-  context.globalAlpha = 0.1;
-  drawTextWithMode(context, line, centerX - 0.6, baselineY + 0.8, letterSpacing, "stroke");
-
-  drawTextErosion(context, line, centerX, baselineY, letterSpacing, fontSize, bannerColor);
+  drawAgedTextMask(context, line, centerX, baselineY, letterSpacing, fontSize, bannerColor);
   context.restore();
 }
 
@@ -235,7 +224,7 @@ function drawTextWithMode(
   });
 }
 
-function drawTextErosion(
+function drawAgedTextMask(
   context: CanvasRenderingContext2D,
   line: string,
   centerX: number,
@@ -245,36 +234,108 @@ function drawTextErosion(
   bannerColor: string
 ) {
   const width = measureTextLine(context, line, letterSpacing);
-  const startX = centerX - width / 2;
-  const topY = baselineY - fontSize * 0.82;
-  const marks = Math.max(10, Math.round(line.length * 2.3));
+  const padding = Math.ceil(fontSize * 0.36);
+  const maskWidth = Math.ceil(width + padding * 2);
+  const maskHeight = Math.ceil(fontSize * 1.45);
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = Math.max(1, maskWidth);
+  maskCanvas.height = Math.max(1, maskHeight);
+  const maskContext = maskCanvas.getContext("2d");
+  if (!maskContext) return;
+
+  maskContext.font = context.font;
+  maskContext.textBaseline = "alphabetic";
+  maskContext.textAlign = "left";
+  maskContext.lineJoin = "round";
+  maskContext.miterLimit = 2;
+  maskContext.strokeStyle = "rgba(255, 246, 230, 0.95)";
+  maskContext.lineWidth = Math.max(1, fontSize * 0.025);
+  maskContext.fillStyle = context.fillStyle;
+
+  const localBaseline = padding + fontSize * 0.92;
+  drawTextLineAt(maskContext, line, padding, localBaseline, letterSpacing, "stroke");
+  drawTextLineAt(maskContext, line, padding, localBaseline, letterSpacing, "fill");
+
+  erodeTextMask(maskContext, maskWidth, maskHeight, line, fontSize);
+
+  const drawX = centerX - width / 2 - padding;
+  const drawY = baselineY - localBaseline;
 
   context.save();
+  context.globalAlpha = 0.97;
+  context.drawImage(maskCanvas, drawX, drawY);
+  context.globalAlpha = 0.2;
+  context.fillStyle = "rgba(255, 255, 255, 0.95)";
+  context.globalCompositeOperation = "screen";
+  context.drawImage(maskCanvas, drawX - 0.7, drawY - 0.4);
+  context.globalCompositeOperation = "source-over";
+  context.globalAlpha = 0.18;
   context.fillStyle = bannerColor;
-  context.globalAlpha = 0.82;
+  drawTextLineAt(context, line, centerX - width / 2 + 0.5, baselineY + 0.8, letterSpacing, "fill");
+  context.restore();
+}
 
-  for (let index = 0; index < marks; index += 1) {
-    const seed = line.charCodeAt(index % Math.max(1, line.length)) + index * 31;
-    const nx = pseudo(seed, 1);
-    const ny = pseudo(seed, 2);
-    const nw = pseudo(seed, 3);
-    const nh = pseudo(seed, 4);
-    const x = startX + nx * width;
-    const y = topY + ny * fontSize * 0.92;
-    const markWidth = Math.max(1, fontSize * (0.025 + nw * 0.09));
-    const markHeight = Math.max(1, fontSize * (0.018 + nh * 0.045));
-    context.fillRect(x, y, markWidth, markHeight);
+function erodeTextMask(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  line: string,
+  fontSize: number
+) {
+  context.save();
+  context.globalCompositeOperation = "destination-out";
+
+  const seedBase = Array.from(line).reduce((total, char) => total + char.charCodeAt(0), 0);
+  context.fillStyle = "rgba(0, 0, 0, 0.92)";
+  const chipCount = Math.max(24, Math.round(line.length * 5.6));
+  for (let index = 0; index < chipCount; index += 1) {
+    const seed = seedBase + index * 73;
+    const x = pseudo(seed, 1) * width;
+    const y = pseudo(seed, 2) * height;
+    const chipWidth = fontSize * (0.018 + pseudo(seed, 3) * 0.095);
+    const chipHeight = fontSize * (0.018 + pseudo(seed, 4) * 0.08);
+    context.fillRect(x, y, Math.max(1, chipWidth), Math.max(1, chipHeight));
   }
 
-  context.globalAlpha = 0.34;
-  for (let index = 0; index < Math.max(3, line.length / 2); index += 1) {
-    const seed = 900 + index * 47 + line.length;
-    const x = startX + pseudo(seed, 1) * width;
-    const y = topY + pseudo(seed, 2) * fontSize;
-    context.fillRect(x, y, fontSize * (0.16 + pseudo(seed, 3) * 0.22), Math.max(1, fontSize * 0.025));
+  context.strokeStyle = "rgba(0, 0, 0, 0.82)";
+  context.lineWidth = Math.max(1, fontSize * 0.035);
+  context.lineCap = "round";
+  const crackCount = Math.max(4, Math.round(line.length * 0.85));
+  for (let index = 0; index < crackCount; index += 1) {
+    const seed = seedBase + 500 + index * 89;
+    const startX = pseudo(seed, 1) * width;
+    const startY = pseudo(seed, 2) * height;
+    const length = fontSize * (0.36 + pseudo(seed, 3) * 0.9);
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(startX + length * (pseudo(seed, 4) - 0.5), startY + length * 0.2);
+    context.lineTo(startX + length * (pseudo(seed, 5) - 0.5), startY + length * 0.42);
+    context.stroke();
   }
 
   context.restore();
+}
+
+function drawTextLineAt(
+  context: CanvasRenderingContext2D,
+  line: string,
+  x: number,
+  baselineY: number,
+  letterSpacing: number,
+  mode: "fill" | "stroke"
+) {
+  if (letterSpacing === 0 || line.length <= 1) {
+    if (mode === "fill") context.fillText(line, x, baselineY);
+    else context.strokeText(line, x, baselineY);
+    return;
+  }
+
+  let cursorX = x;
+  Array.from(line).forEach((char) => {
+    if (mode === "fill") context.fillText(char, cursorX, baselineY);
+    else context.strokeText(char, cursorX, baselineY);
+    cursorX += context.measureText(char).width + letterSpacing;
+  });
 }
 
 function measureTextLine(context: CanvasRenderingContext2D, line: string, letterSpacing: number) {
