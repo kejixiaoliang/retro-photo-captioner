@@ -6,12 +6,36 @@ export interface RenderCompositeOptions {
   canvas?: HTMLCanvasElement;
   image: HTMLImageElement;
   settings: RenderSettings;
+  outputScale?: number;
 }
 
 export function getOutputSize(source: Size, bannerHeight: number): Size {
   return {
     width: source.width,
     height: source.height + bannerHeight
+  };
+}
+
+export function getPreviewScale(source: Size, maxWidth: number): number {
+  if (source.width <= maxWidth) return 1;
+  return Number((maxWidth / source.width).toFixed(4));
+}
+
+export function getScaledRenderSettings(settings: RenderSettings, scale: number): RenderSettings {
+  if (scale === 1) return settings;
+
+  return {
+    banner: {
+      ...settings.banner,
+      height: Math.max(1, Math.round(settings.banner.height * scale))
+    },
+    text: {
+      ...settings.text,
+      fontSize: Math.max(1, Math.round(settings.text.fontSize * scale)),
+      letterSpacing: settings.text.letterSpacing * scale,
+      verticalOffset: settings.text.verticalOffset * scale
+    },
+    filter: settings.filter
   };
 }
 
@@ -22,13 +46,19 @@ export function splitTextLines(content: string): string[] {
   return lines.length > 0 ? lines : [""];
 }
 
-export function renderCompositeCanvas({ canvas, image, settings }: RenderCompositeOptions) {
+export function renderCompositeCanvas({ canvas, image, settings, outputScale = 1 }: RenderCompositeOptions) {
   const target = canvas ?? document.createElement("canvas");
   const sourceSize = {
     width: image.naturalWidth || image.width,
     height: image.naturalHeight || image.height
   };
-  const outputSize = getOutputSize(sourceSize, settings.banner.height);
+  const safeScale = Math.max(0.1, Math.min(1, outputScale));
+  const scaledSettings = getScaledRenderSettings(settings, safeScale);
+  const scaledSourceSize = {
+    width: Math.round(sourceSize.width * safeScale),
+    height: Math.round(sourceSize.height * safeScale)
+  };
+  const outputSize = getOutputSize(scaledSourceSize, scaledSettings.banner.height);
   target.width = outputSize.width;
   target.height = outputSize.height;
 
@@ -39,22 +69,25 @@ export function renderCompositeCanvas({ canvas, image, settings }: RenderComposi
 
   context.clearRect(0, 0, target.width, target.height);
 
-  const imageY = settings.banner.position === "top" ? settings.banner.height : 0;
-  context.drawImage(image, 0, imageY, sourceSize.width, sourceSize.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
+  const imageY = scaledSettings.banner.position === "top" ? scaledSettings.banner.height : 0;
+  context.drawImage(image, 0, imageY, scaledSourceSize.width, scaledSourceSize.height);
   applyPhotoFilter(
     context,
     0,
     imageY,
-    sourceSize.width,
-    sourceSize.height,
-    settings.filter.presetId,
-    settings.filter.strength,
-    settings.filter.grain,
-    settings.filter.vignette
+    scaledSourceSize.width,
+    scaledSourceSize.height,
+    scaledSettings.filter.presetId,
+    scaledSettings.filter.strength,
+    scaledSettings.filter.grain,
+    scaledSettings.filter.vignette
   );
 
-  const bannerY = settings.banner.position === "top" ? 0 : sourceSize.height;
-  drawBanner(context, target.width, bannerY, settings);
+  const bannerY = scaledSettings.banner.position === "top" ? 0 : scaledSourceSize.height;
+  drawBanner(context, target.width, bannerY, scaledSettings);
 
   return target;
 }
@@ -106,14 +139,75 @@ function drawBanner(
   context.textBaseline = "alphabetic";
   context.font = `700 ${text.fontSize}px ${fontPreset.family}`;
   context.shadowColor = "rgba(38, 0, 0, 0.45)";
-  context.shadowBlur = 1.6;
+  context.shadowBlur = text.effect === "aged-print" ? 0.8 : 1.6;
   context.shadowOffsetY = 1;
 
   lines.forEach((line, index) => {
-    drawCenteredTextLine(context, line, width / 2, startY + index * lineHeightPx, text.letterSpacing);
+    if (text.effect === "aged-print") {
+      drawAgedTextLine(context, line, width / 2, startY + index * lineHeightPx, text.letterSpacing);
+    } else {
+      drawCenteredTextLine(context, line, width / 2, startY + index * lineHeightPx, text.letterSpacing);
+    }
   });
 
   context.restore();
+}
+
+function drawAgedTextLine(
+  context: CanvasRenderingContext2D,
+  line: string,
+  centerX: number,
+  baselineY: number,
+  letterSpacing: number
+) {
+  context.save();
+  context.lineJoin = "round";
+  context.miterLimit = 2;
+  context.strokeStyle = "rgba(54, 0, 0, 0.72)";
+  context.lineWidth = Math.max(1, getFontSizeFromCanvasFont(context.font) * 0.045);
+  drawTextWithMode(context, line, centerX, baselineY, letterSpacing, "stroke");
+
+  context.globalAlpha = 0.92;
+  drawCenteredTextLine(context, line, centerX, baselineY, letterSpacing);
+
+  context.globalAlpha = 0.18;
+  context.fillStyle = "rgba(92, 18, 18, 0.9)";
+  drawCenteredTextLine(context, line, centerX + 0.7, baselineY - 0.5, letterSpacing);
+
+  context.globalAlpha = 0.13;
+  drawTextWithMode(context, line, centerX - 0.6, baselineY + 0.8, letterSpacing, "stroke");
+  context.restore();
+}
+
+function getFontSizeFromCanvasFont(font: string) {
+  const match = font.match(/(\d+(?:\.\d+)?)px/);
+  return match ? Number(match[1]) : 24;
+}
+
+function drawTextWithMode(
+  context: CanvasRenderingContext2D,
+  line: string,
+  centerX: number,
+  baselineY: number,
+  letterSpacing: number,
+  mode: "fill" | "stroke"
+) {
+  if (letterSpacing === 0 || line.length <= 1) {
+    if (mode === "fill") context.fillText(line, centerX, baselineY);
+    else context.strokeText(line, centerX, baselineY);
+    return;
+  }
+
+  const chars = Array.from(line);
+  const textWidth =
+    chars.reduce((total, char) => total + context.measureText(char).width, 0) +
+    letterSpacing * (chars.length - 1);
+  let x = centerX - textWidth / 2;
+  chars.forEach((char) => {
+    if (mode === "fill") context.fillText(char, x, baselineY);
+    else context.strokeText(char, x, baselineY);
+    x += context.measureText(char).width + letterSpacing;
+  });
 }
 
 function drawCenteredTextLine(

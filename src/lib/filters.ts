@@ -28,75 +28,75 @@ const neutralParams: FilterParams = {
 
 export const filterPresets: Record<FilterPresetId, FilterParams> = {
   period: {
-    saturation: 0.82,
-    contrast: 1.12,
-    brightness: 0.98,
-    warmth: 10,
-    sepia: 0.08,
-    fade: 0.05,
+    saturation: 0.9,
+    contrast: 1.04,
+    brightness: 0.99,
+    warmth: 7,
+    sepia: 0.05,
+    fade: 0.03,
     grayscale: 0,
-    grain: 0.12,
-    vignette: 0.18,
+    grain: 0.045,
+    vignette: 0.1,
     lightLeak: 0
   },
   realOldPhoto: {
-    saturation: 0.56,
-    contrast: 0.92,
-    brightness: 1.04,
-    warmth: 34,
-    sepia: 0.42,
-    fade: 0.18,
-    grayscale: 0.05,
-    grain: 0.28,
-    vignette: 0.35,
-    lightLeak: 0.05
+    saturation: 0.72,
+    contrast: 0.9,
+    brightness: 1.03,
+    warmth: 22,
+    sepia: 0.25,
+    fade: 0.16,
+    grayscale: 0.03,
+    grain: 0.09,
+    vignette: 0.22,
+    lightLeak: 0.03
   },
   filmTravel: {
-    saturation: 0.9,
-    contrast: 1.05,
-    brightness: 1.04,
-    warmth: 22,
-    sepia: 0.12,
-    fade: 0.08,
+    saturation: 0.94,
+    contrast: 1.02,
+    brightness: 1.03,
+    warmth: 14,
+    sepia: 0.06,
+    fade: 0.04,
     grayscale: 0,
-    grain: 0.1,
-    vignette: 0.12,
-    lightLeak: 0.22
+    grain: 0.04,
+    vignette: 0.07,
+    lightLeak: 0.12
   },
   blackWhiteArchive: {
     saturation: 0.05,
-    contrast: 1.08,
-    brightness: 0.96,
+    contrast: 1.02,
+    brightness: 0.98,
     warmth: 0,
     sepia: 0.02,
-    fade: 0.14,
-    grayscale: 0.92,
-    grain: 0.24,
-    vignette: 0.25,
+    fade: 0.1,
+    grayscale: 0.9,
+    grain: 0.08,
+    vignette: 0.18,
     lightLeak: 0
   },
   fadedAlbum: {
-    saturation: 0.62,
-    contrast: 0.78,
-    brightness: 1.08,
-    warmth: 18,
-    sepia: 0.18,
-    fade: 0.28,
+    saturation: 0.76,
+    contrast: 0.84,
+    brightness: 1.04,
+    warmth: 12,
+    sepia: 0.12,
+    fade: 0.22,
     grayscale: 0.02,
-    grain: 0.14,
-    vignette: 0.16,
-    lightLeak: 0.08
+    grain: 0.05,
+    vignette: 0.09,
+    lightLeak: 0.05
   },
   redEra: {
-    saturation: 0.72,
-    contrast: 1.18,
-    brightness: 0.96,
-    warmth: 16,
-    sepia: 0.16,
+    saturation: 0.82,
+    contrast: 1.08,
+    brightness: 0.98,
+    warmth: 10,
+    sepia: 0.08,
     fade: 0.04,
     grayscale: 0,
-    grain: 0.18,
-    vignette: 0.28,
+    grain: 0.06,
+    vignette: 0.18,
     lightLeak: 0
   }
 };
@@ -132,8 +132,8 @@ export function applyPhotoFilter(
 ) {
   const preset = filterPresets[presetId];
   const params = blendFilterParams(preset, strength);
-  params.grain = Math.max(params.grain, grainBoost / 100);
-  params.vignette = Math.max(params.vignette, vignetteBoost / 100);
+  params.grain = Math.max(params.grain, grainBoost / 350);
+  params.vignette = Math.max(params.vignette, vignetteBoost / 160);
 
   const imageData = context.getImageData(x, y, width, height);
   const data = imageData.data;
@@ -177,10 +177,12 @@ export function applyPhotoFilter(
     blue = blue + (gray - blue) * params.grayscale;
 
     const pixel = index / 4;
-    const grain = ((Math.sin(pixel * 12.9898) * 43758.5453) % 1) * 255 - 127;
-    red += grain * params.grain;
-    green += grain * params.grain;
-    blue += grain * params.grain;
+    const pixelX = pixel % width;
+    const pixelY = Math.floor(pixel / width);
+    const grain = noise(pixelX, pixelY) * 34 * params.grain;
+    red += grain;
+    green += grain * 0.94;
+    blue += grain * 0.82;
 
     data[index] = clampColor(red);
     data[index + 1] = clampColor(green);
@@ -190,6 +192,11 @@ export function applyPhotoFilter(
   context.putImageData(imageData, x, y);
   drawVignette(context, x, y, width, height, params.vignette);
   drawLightLeak(context, x, y, width, height, params.lightLeak);
+}
+
+function noise(x: number, y: number) {
+  const value = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+  return (value - Math.floor(value) - 0.5) * 2;
 }
 
 function clampColor(value: number) {

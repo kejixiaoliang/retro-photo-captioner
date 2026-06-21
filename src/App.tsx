@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import PreviewCanvas from "./components/PreviewCanvas";
-import { exportCanvas } from "./lib/renderCanvas";
+import { exportCanvas, getPreviewScale, renderCompositeCanvas } from "./lib/renderCanvas";
 import { initialExportSettings, initialRenderSettings } from "./lib/presets";
 import type { ExportSettings, RenderSettings } from "./lib/types";
 
@@ -24,8 +24,21 @@ export default function App() {
     if (!image) return null;
     const width = image.naturalWidth || image.width;
     const height = image.naturalHeight || image.height;
-    return `${width} x ${height}，导出高度 ${height + settings.banner.height}`;
-  }, [image, settings.banner.height]);
+    const exportWidth = Math.round(width * exportSettings.scale);
+    const exportHeight = Math.round((height + settings.banner.height) * exportSettings.scale);
+    return `${width} x ${height}，导出 ${exportWidth} x ${exportHeight}`;
+  }, [image, settings.banner.height, exportSettings.scale]);
+
+  const previewScale = useMemo(() => {
+    if (!image) return 1;
+    return getPreviewScale(
+      {
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height
+      },
+      1600
+    );
+  }, [image]);
 
   const handleUpload = useCallback(
     (file: File | null) => {
@@ -64,18 +77,23 @@ export default function App() {
   }, []);
 
   const handleExport = useCallback(async () => {
-    if (!previewCanvasRef.current) {
+    if (!image) {
       setStatus("请先上传图片。");
       return;
     }
 
     try {
-      await exportCanvas(previewCanvasRef.current, exportSettings);
+      const outputCanvas = renderCompositeCanvas({
+        image,
+        settings,
+        outputScale: exportSettings.scale
+      });
+      await exportCanvas(outputCanvas, exportSettings);
       setStatus("已生成下载文件。");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "导出失败。");
     }
-  }, [exportSettings]);
+  }, [exportSettings, image, settings]);
 
   return (
     <main className="app-shell">
@@ -102,6 +120,7 @@ export default function App() {
             settings={settings}
             onRendered={handleRendered}
             onError={handlePreviewError}
+            previewScale={previewScale}
           />
         </div>
       </section>

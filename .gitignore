@@ -3,4 +3,4 @@ dist/
 .vite/
 *.log
 *.tsbuildinfo
-preview-home.png
+preview-*.png

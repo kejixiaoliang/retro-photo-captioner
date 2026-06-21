@@ -7,9 +7,10 @@ interface PreviewCanvasProps {
   settings: RenderSettings;
   onRendered: (canvas: HTMLCanvasElement | null) => void;
   onError: (message: string) => void;
+  previewScale: number;
 }
 
-export default function PreviewCanvas({ image, settings, onRendered, onError }: PreviewCanvasProps) {
+export default function PreviewCanvas({ image, settings, onRendered, onError, previewScale }: PreviewCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -18,18 +19,23 @@ export default function PreviewCanvas({ image, settings, onRendered, onError }: 
       return;
     }
 
-    try {
-      const canvas = renderCompositeCanvas({
-        canvas: canvasRef.current,
-        image,
-        settings
-      });
-      onRendered(canvas);
-    } catch (error) {
-      onRendered(null);
-      onError(error instanceof Error ? error.message : "预览渲染失败");
-    }
-  }, [image, settings, onError, onRendered]);
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const canvas = renderCompositeCanvas({
+          canvas: canvasRef.current ?? undefined,
+          image,
+          settings,
+          outputScale: previewScale
+        });
+        onRendered(canvas);
+      } catch (error) {
+        onRendered(null);
+        onError(error instanceof Error ? error.message : "预览渲染失败");
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [image, settings, onError, onRendered, previewScale]);
 
   if (!image) {
     return (

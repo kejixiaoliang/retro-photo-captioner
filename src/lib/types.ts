@@ -1,6 +1,13 @@
 export type BannerPosition = "top" | "bottom";
 export type ExportFormat = "png" | "jpeg";
-export type FontPresetId = "solemn-song" | "old-fangsong" | "kai-travel" | "handwritten" | "system";
+export type FontPresetId =
+  | "aged-song"
+  | "solemn-song"
+  | "old-fangsong"
+  | "kai-travel"
+  | "handwritten"
+  | "system";
+export type TextEffect = "clean" | "aged-print";
 export type FilterPresetId =
   | "period"
   | "realOldPhoto"
@@ -28,6 +35,7 @@ export interface TextSettings {
   lineHeight: number;
   letterSpacing: number;
   verticalOffset: number;
+  effect: TextEffect;
 }
 
 export interface FilterSettings {
@@ -40,6 +48,7 @@ export interface FilterSettings {
 export interface ExportSettings {
   format: ExportFormat;
   jpegQuality: number;
+  scale: number;
 }
 
 export interface RenderSettings {

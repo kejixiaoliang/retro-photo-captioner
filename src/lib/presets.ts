@@ -5,6 +5,12 @@ export const defaultText =
 
 export const fontPresets: FontPreset[] = [
   {
+    id: "aged-song",
+    name: "时代留影",
+    description: "粗宋刻字与斑驳印刷感",
+    family: "\"STSong\", \"SimSun\", \"Noto Serif SC\", serif"
+  },
+  {
     id: "solemn-song",
     name: "庄重宋刻",
     description: "正式纪念照标题风格",
@@ -53,12 +59,13 @@ export const initialRenderSettings: RenderSettings = {
   },
   text: {
     content: defaultText,
-    fontPresetId: "solemn-song",
+    fontPresetId: "aged-song",
     fontSize: 30,
     color: "#fff7ee",
     lineHeight: 1.18,
     letterSpacing: 1.2,
-    verticalOffset: 0
+    verticalOffset: 0,
+    effect: "aged-print"
   },
   filter: {
     presetId: "period",
@@ -69,8 +76,9 @@ export const initialRenderSettings: RenderSettings = {
 };
 
 export const initialExportSettings: ExportSettings = {
-  format: "png",
-  jpegQuality: 0.92
+  format: "jpeg",
+  jpegQuality: 0.9,
+  scale: 1
 };
 
 export function getFontPreset(id: string): FontPreset {

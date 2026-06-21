@@ -143,6 +143,10 @@ h1 {
   background: #e9dfd1;
 }
 
+.segmented.compact {
+  margin-top: 12px;
+}
+
 .segmented button,
 .preset-button,
 .export-button {
@@ -186,6 +190,33 @@ h1 {
 input[type="range"] {
   width: 100%;
   accent-color: #780512;
+}
+
+.range-control {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-control button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(70, 55, 44, 0.18);
+  border-radius: 7px;
+  color: #681019;
+  background: #fffaf1;
+}
+
+.range-control button:active {
+  transform: translateY(1px);
+}
+
+.range-control svg {
+  width: 15px;
+  height: 15px;
 }
 
 select,

@@ -2,6 +2,8 @@ import {
   AlignCenter,
   Download,
   ImagePlus,
+  Minus,
+  Plus,
   SlidersHorizontal,
   Type,
   Wand2
@@ -143,6 +145,22 @@ export default function ControlPanel({
             ))}
           </select>
         </label>
+        <div className="segmented compact">
+          <button
+            className={settings.text.effect === "aged-print" ? "active" : ""}
+            type="button"
+            onClick={() => updateSettings({ text: { ...settings.text, effect: "aged-print" } })}
+          >
+            斑驳印刷
+          </button>
+          <button
+            className={settings.text.effect === "clean" ? "active" : ""}
+            type="button"
+            onClick={() => updateSettings({ text: { ...settings.text, effect: "clean" } })}
+          >
+            清晰文字
+          </button>
+        </div>
         <RangeField
           label="字号"
           value={settings.text.fontSize}
@@ -277,6 +295,15 @@ export default function ControlPanel({
             }
           />
         )}
+        <RangeField
+          label="导出尺寸"
+          value={Math.round(exportSettings.scale * 100)}
+          min={40}
+          max={100}
+          step={5}
+          unit="%"
+          onChange={(scale) => onExportSettingsChange({ ...exportSettings, scale: scale / 100 })}
+        />
         <button className="export-button" type="button" disabled={!canExport} onClick={onExport}>
           <Download aria-hidden="true" />
           下载成图
@@ -297,23 +324,42 @@ interface RangeFieldProps {
 }
 
 function RangeField({ label, value, min, max, step, unit = "", onChange }: RangeFieldProps) {
+  const clamp = (nextValue: number) => Math.max(min, Math.min(max, Number(nextValue.toFixed(4))));
+  const displayValue = Number.isInteger(value) ? value : value.toFixed(2);
+
   return (
     <label className="range-field">
       <span>
         {label}
         <strong>
-          {Number.isInteger(value) ? value : value.toFixed(2)}
+          {displayValue}
           {unit}
         </strong>
       </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
+      <div className="range-control">
+        <button
+          type="button"
+          aria-label={`${label} 减少`}
+          onClick={() => onChange(clamp(value - step))}
+        >
+          <Minus aria-hidden="true" />
+        </button>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <button
+          type="button"
+          aria-label={`${label} 增加`}
+          onClick={() => onChange(clamp(value + step))}
+        >
+          <Plus aria-hidden="true" />
+        </button>
+      </div>
     </label>
   );
 }
