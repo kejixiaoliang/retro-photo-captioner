@@ -19,22 +19,28 @@ export default function PreviewCanvas({ image, settings, onRendered, onError, pr
       return;
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      try {
-        const canvas = renderCompositeCanvas({
-          canvas: canvasRef.current ?? undefined,
-          image,
-          settings,
-          outputScale: previewScale
-        });
-        onRendered(canvas);
-      } catch (error) {
-        onRendered(null);
-        onError(error instanceof Error ? error.message : "预览渲染失败");
-      }
-    });
+    let frame = 0;
+    const timeout = window.setTimeout(() => {
+      frame = window.requestAnimationFrame(() => {
+        try {
+          const canvas = renderCompositeCanvas({
+            canvas: canvasRef.current ?? undefined,
+            image,
+            settings,
+            outputScale: previewScale
+          });
+          onRendered(canvas);
+        } catch (error) {
+          onRendered(null);
+          onError(error instanceof Error ? error.message : "预览渲染失败");
+        }
+      });
+    }, 70);
 
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.clearTimeout(timeout);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, [image, settings, onError, onRendered, previewScale]);
 
   if (!image) {

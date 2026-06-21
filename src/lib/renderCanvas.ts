@@ -74,20 +74,34 @@ export function renderCompositeCanvas({ canvas, image, settings, outputScale = 1
 
   const imageY = scaledSettings.banner.position === "top" ? scaledSettings.banner.height : 0;
   context.drawImage(image, 0, imageY, scaledSourceSize.width, scaledSourceSize.height);
-  applyPhotoFilter(
-    context,
-    0,
-    imageY,
-    scaledSourceSize.width,
-    scaledSourceSize.height,
-    scaledSettings.filter.presetId,
-    scaledSettings.filter.strength,
-    scaledSettings.filter.grain,
-    scaledSettings.filter.vignette
-  );
-
   const bannerY = scaledSettings.banner.position === "top" ? 0 : scaledSourceSize.height;
   drawBanner(context, target.width, bannerY, scaledSettings);
+
+  if (scaledSettings.filter.applyToBanner) {
+    applyPhotoFilter(
+      context,
+      0,
+      0,
+      target.width,
+      target.height,
+      scaledSettings.filter.presetId,
+      scaledSettings.filter.strength,
+      scaledSettings.filter.grain,
+      scaledSettings.filter.vignette
+    );
+  } else {
+    applyPhotoFilter(
+      context,
+      0,
+      imageY,
+      scaledSourceSize.width,
+      scaledSourceSize.height,
+      scaledSettings.filter.presetId,
+      scaledSettings.filter.strength,
+      scaledSettings.filter.grain,
+      scaledSettings.filter.vignette
+    );
+  }
 
   return target;
 }
@@ -144,7 +158,14 @@ function drawBanner(
 
   lines.forEach((line, index) => {
     if (text.effect === "aged-print") {
-      drawAgedTextLine(context, line, width / 2, startY + index * lineHeightPx, text.letterSpacing);
+      drawAgedTextLine(
+        context,
+        line,
+        width / 2,
+        startY + index * lineHeightPx,
+        text.letterSpacing,
+        banner.color
+      );
     } else {
       drawCenteredTextLine(context, line, width / 2, startY + index * lineHeightPx, text.letterSpacing);
     }
@@ -158,24 +179,28 @@ function drawAgedTextLine(
   line: string,
   centerX: number,
   baselineY: number,
-  letterSpacing: number
+  letterSpacing: number,
+  bannerColor: string
 ) {
+  const fontSize = getFontSizeFromCanvasFont(context.font);
   context.save();
   context.lineJoin = "round";
   context.miterLimit = 2;
   context.strokeStyle = "rgba(54, 0, 0, 0.72)";
-  context.lineWidth = Math.max(1, getFontSizeFromCanvasFont(context.font) * 0.045);
+  context.lineWidth = Math.max(1, fontSize * 0.045);
   drawTextWithMode(context, line, centerX, baselineY, letterSpacing, "stroke");
 
-  context.globalAlpha = 0.92;
+  context.globalAlpha = 0.9;
   drawCenteredTextLine(context, line, centerX, baselineY, letterSpacing);
 
-  context.globalAlpha = 0.18;
+  context.globalAlpha = 0.16;
   context.fillStyle = "rgba(92, 18, 18, 0.9)";
   drawCenteredTextLine(context, line, centerX + 0.7, baselineY - 0.5, letterSpacing);
 
-  context.globalAlpha = 0.13;
+  context.globalAlpha = 0.1;
   drawTextWithMode(context, line, centerX - 0.6, baselineY + 0.8, letterSpacing, "stroke");
+
+  drawTextErosion(context, line, centerX, baselineY, letterSpacing, fontSize, bannerColor);
   context.restore();
 }
 
@@ -210,6 +235,61 @@ function drawTextWithMode(
   });
 }
 
+function drawTextErosion(
+  context: CanvasRenderingContext2D,
+  line: string,
+  centerX: number,
+  baselineY: number,
+  letterSpacing: number,
+  fontSize: number,
+  bannerColor: string
+) {
+  const width = measureTextLine(context, line, letterSpacing);
+  const startX = centerX - width / 2;
+  const topY = baselineY - fontSize * 0.82;
+  const marks = Math.max(10, Math.round(line.length * 2.3));
+
+  context.save();
+  context.fillStyle = bannerColor;
+  context.globalAlpha = 0.82;
+
+  for (let index = 0; index < marks; index += 1) {
+    const seed = line.charCodeAt(index % Math.max(1, line.length)) + index * 31;
+    const nx = pseudo(seed, 1);
+    const ny = pseudo(seed, 2);
+    const nw = pseudo(seed, 3);
+    const nh = pseudo(seed, 4);
+    const x = startX + nx * width;
+    const y = topY + ny * fontSize * 0.92;
+    const markWidth = Math.max(1, fontSize * (0.025 + nw * 0.09));
+    const markHeight = Math.max(1, fontSize * (0.018 + nh * 0.045));
+    context.fillRect(x, y, markWidth, markHeight);
+  }
+
+  context.globalAlpha = 0.34;
+  for (let index = 0; index < Math.max(3, line.length / 2); index += 1) {
+    const seed = 900 + index * 47 + line.length;
+    const x = startX + pseudo(seed, 1) * width;
+    const y = topY + pseudo(seed, 2) * fontSize;
+    context.fillRect(x, y, fontSize * (0.16 + pseudo(seed, 3) * 0.22), Math.max(1, fontSize * 0.025));
+  }
+
+  context.restore();
+}
+
+function measureTextLine(context: CanvasRenderingContext2D, line: string, letterSpacing: number) {
+  const chars = Array.from(line);
+  return (
+    chars.reduce((total, char) => total + context.measureText(char).width, 0) +
+    letterSpacing * Math.max(0, chars.length - 1)
+  );
+}
+
+function pseudo(seed: number, salt: number) {
+  const value = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 function drawCenteredTextLine(
   context: CanvasRenderingContext2D,
   line: string,
@@ -223,9 +303,7 @@ function drawCenteredTextLine(
   }
 
   const chars = Array.from(line);
-  const textWidth =
-    chars.reduce((total, char) => total + context.measureText(char).width, 0) +
-    letterSpacing * (chars.length - 1);
+  const textWidth = measureTextLine(context, line, letterSpacing);
   let x = centerX - textWidth / 2;
   chars.forEach((char) => {
     context.fillText(char, x, baselineY);

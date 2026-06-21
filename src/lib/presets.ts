@@ -71,7 +71,8 @@ export const initialRenderSettings: RenderSettings = {
     presetId: "period",
     strength: 55,
     grain: 14,
-    vignette: 18
+    vignette: 18,
+    applyToBanner: false
   }
 };
 

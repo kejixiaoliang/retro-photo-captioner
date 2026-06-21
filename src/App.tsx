@@ -36,7 +36,7 @@ export default function App() {
         width: image.naturalWidth || image.width,
         height: image.naturalHeight || image.height
       },
-      1600
+      1200
     );
   }, [image]);
 

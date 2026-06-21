@@ -35,7 +35,7 @@ describe("renderCanvas helpers", () => {
           verticalOffset: 4,
           effect: "aged-print"
         },
-        filter: { presetId: "period", strength: 50, grain: 10, vignette: 10 }
+        filter: { presetId: "period", strength: 50, grain: 10, vignette: 10, applyToBanner: false }
       },
       0.5
     );
@@ -44,5 +44,6 @@ describe("renderCanvas helpers", () => {
     expect(settings.text.fontSize).toBe(20);
     expect(settings.text.letterSpacing).toBe(1);
     expect(settings.text.verticalOffset).toBe(2);
+    expect(settings.filter.applyToBanner).toBe(false);
   });
 });

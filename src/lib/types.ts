@@ -43,6 +43,7 @@ export interface FilterSettings {
   strength: number;
   grain: number;
   vignette: number;
+  applyToBanner: boolean;
 }
 
 export interface ExportSettings {

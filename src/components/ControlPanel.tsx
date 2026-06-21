@@ -46,6 +46,7 @@ export default function ControlPanel({
         <div>
           <span className="eyebrow">Canvas 本地处理</span>
           <h1>复古纪念照框幅</h1>
+          <p className="author-line">公众号：科技小亮AGI</p>
         </div>
         <Wand2 aria-hidden="true" />
       </header>
@@ -259,6 +260,21 @@ export default function ControlPanel({
           unit="%"
           onChange={(vignette) => updateSettings({ filter: { ...settings.filter, vignette } })}
         />
+        <label className="toggle-row">
+          <span>
+            覆盖横幅
+            <small>让滤镜、颗粒、暗角同时作用到深红框幅</small>
+          </span>
+          <input
+            type="checkbox"
+            checked={settings.filter.applyToBanner}
+            onChange={(event) =>
+              updateSettings({
+                filter: { ...settings.filter, applyToBanner: event.target.checked }
+              })
+            }
+          />
+        </label>
       </section>
 
       <section className="panel-section export-section">
