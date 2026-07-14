@@ -15,6 +15,12 @@ export type FilterPresetId =
   | "blackWhiteArchive"
   | "fadedAlbum"
   | "redEra";
+export type EditorTemplateId =
+  | "commemorative"
+  | "newspaper"
+  | "travel"
+  | "archive"
+  | "redEra";
 
 export interface Size {
   width: number;
@@ -69,4 +75,11 @@ export interface FilterPresetMeta {
   id: FilterPresetId;
   name: string;
   description: string;
+}
+
+export interface EditorTemplate {
+  id: EditorTemplateId;
+  name: string;
+  description: string;
+  settings: RenderSettings;
 }

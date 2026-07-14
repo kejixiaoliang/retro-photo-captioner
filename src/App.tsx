@@ -3,11 +3,14 @@ import ControlPanel from "./components/ControlPanel";
 import PreviewCanvas from "./components/PreviewCanvas";
 import { exportCanvas, getPreviewScale, renderCompositeCanvas } from "./lib/renderCanvas";
 import { initialExportSettings, initialRenderSettings } from "./lib/presets";
-import type { ExportSettings, RenderSettings } from "./lib/types";
+import { applyTemplateToSettings } from "./lib/templates";
+import { fitTextToBanner, splitTextForFit } from "./lib/textFit";
+import type { EditorTemplateId, ExportSettings, RenderSettings } from "./lib/types";
 
 export default function App() {
   const [settings, setSettings] = useState<RenderSettings>(initialRenderSettings);
   const [exportSettings, setExportSettings] = useState<ExportSettings>(initialExportSettings);
+  const [activeTemplateId, setActiveTemplateId] = useState<EditorTemplateId>("commemorative");
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
@@ -76,6 +79,40 @@ export default function App() {
     setStatus(message);
   }, []);
 
+  const handleTemplateChange = useCallback((templateId: EditorTemplateId) => {
+    setSettings((current) => applyTemplateToSettings(current, templateId));
+    setActiveTemplateId(templateId);
+    setStatus("模板已应用，原有文案已保留。");
+  }, []);
+
+  const handleAutoFitText = useCallback(() => {
+    if (!image) {
+      setStatus("请先上传图片，再自动适配文字。");
+      return;
+    }
+
+    const result = fitTextToBanner({
+      lines: splitTextForFit(settings.text.content),
+      bannerWidth: image.naturalWidth || image.width,
+      bannerHeight: settings.banner.height,
+      currentFontSize: settings.text.fontSize,
+      minFontSize: 16,
+      maxFontSize: 76,
+      lineHeight: settings.text.lineHeight,
+      letterSpacing: settings.text.letterSpacing,
+      averageCharWidthRatio: 0.95
+    });
+
+    setSettings({
+      ...settings,
+      text: {
+        ...settings.text,
+        fontSize: result.fontSize
+      }
+    });
+    setStatus(result.fits ? "文字已适配当前横幅。" : "文字较密，已调整到最小可读字号。");
+  }, [image, settings]);
+
   const handleExport = useCallback(async () => {
     if (!image) {
       setStatus("请先上传图片。");
@@ -104,9 +141,12 @@ export default function App() {
         imageSize={imageSize}
         status={status}
         canExport={Boolean(image)}
+        activeTemplateId={activeTemplateId}
         onUpload={handleUpload}
         onSettingsChange={setSettings}
         onExportSettingsChange={setExportSettings}
+        onTemplateChange={handleTemplateChange}
+        onAutoFitText={handleAutoFitText}
         onExport={handleExport}
       />
       <section className="preview-stage" aria-label="实时预览">

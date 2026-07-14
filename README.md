@@ -13,6 +13,9 @@ A local-first web tool for creating retro Chinese commemorative photos. Upload a
 - Editable multi-line Chinese caption text.
 - Retro font presets with system fallbacks.
 - Multiple vintage filter presets with adjustable strength, grain, and vignette.
+- One-click text fitting for dense captions.
+- Style templates for commemorative, newspaper, travel, archive, and red-era looks.
+- Browser verification screenshots for desktop and mobile layouts.
 - PNG and JPEG export.
 
 ### Development
@@ -28,6 +31,14 @@ npm run dev
 npm run build
 ```
 
+### Verification
+
+```bash
+npm run test
+npm run build
+npm run verify:browser
+```
+
 ## 中文
 
 一个本地优先的复古中文纪念照网页工具。用户可以上传照片，在照片上方或下方添加深红色框幅，输入多行中文纪念文字，套用老照片滤镜，并在浏览器中导出 PNG 或 JPEG 图片。
@@ -39,6 +50,9 @@ npm run build
 - 支持编辑多行中文纪念文字。
 - 提供复古字体预设，并保留系统字体兜底。
 - 提供多种复古滤镜，可调节滤镜强度、颗粒和暗角。
+- 一键适配较长横幅文字。
+- 提供纪念合影、老报纸、旅行留念、黑白档案、红色年代等模板。
+- 提供桌面端和移动端浏览器截图验证。
 - 支持导出 PNG 和 JPEG。
 
 ### 开发
@@ -52,4 +66,12 @@ npm run dev
 
 ```bash
 npm run build
+```
+
+### 验证
+
+```bash
+npm run test
+npm run build
+npm run verify:browser
 ```

@@ -290,6 +290,40 @@ textarea {
   background: #eadbc7;
 }
 
+.template-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.template-grid button {
+  display: grid;
+  gap: 4px;
+  min-height: 54px;
+  padding: 9px 10px;
+  border: 1px solid rgba(70, 55, 44, 0.16);
+  border-radius: 7px;
+  background: #fffaf1;
+  color: #42302a;
+  text-align: left;
+}
+
+.template-grid button.active {
+  border-color: rgba(120, 5, 18, 0.7);
+  background: #780512;
+  color: #fff8ef;
+}
+
+.template-grid button span {
+  font-weight: 700;
+}
+
+.template-grid small {
+  color: inherit;
+  opacity: 0.74;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .color-row {
   grid-template-columns: 1fr 44px auto;
   align-items: center;

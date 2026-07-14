@@ -5,11 +5,13 @@ import {
   Minus,
   Plus,
   SlidersHorizontal,
+  Sparkles,
   Type,
   Wand2
 } from "lucide-react";
 import { defaultText, filterPresetMetas, fontPresets } from "../lib/presets";
-import type { ExportSettings, RenderSettings } from "../lib/types";
+import { editorTemplates } from "../lib/templates";
+import type { EditorTemplateId, ExportSettings, RenderSettings } from "../lib/types";
 
 interface ControlPanelProps {
   settings: RenderSettings;
@@ -18,9 +20,12 @@ interface ControlPanelProps {
   imageSize: string | null;
   status: string;
   canExport: boolean;
+  activeTemplateId: EditorTemplateId;
   onUpload: (file: File | null) => void;
   onSettingsChange: (settings: RenderSettings) => void;
   onExportSettingsChange: (settings: ExportSettings) => void;
+  onTemplateChange: (templateId: EditorTemplateId) => void;
+  onAutoFitText: () => void;
   onExport: () => void;
 }
 
@@ -31,9 +36,12 @@ export default function ControlPanel({
   imageSize,
   status,
   canExport,
+  activeTemplateId,
   onUpload,
   onSettingsChange,
   onExportSettingsChange,
+  onTemplateChange,
+  onAutoFitText,
   onExport
 }: ControlPanelProps) {
   const updateSettings = (patch: Partial<RenderSettings>) => {
@@ -66,6 +74,26 @@ export default function ControlPanel({
           <small>{imageSize ?? "PNG / JPG / WebP / BMP"}</small>
         </label>
         {status && <p className="status-text">{status}</p>}
+      </section>
+
+      <section className="panel-section">
+        <h2>
+          <Sparkles aria-hidden="true" />
+          模板
+        </h2>
+        <div className="template-grid">
+          {editorTemplates.map((template) => (
+            <button
+              key={template.id}
+              className={activeTemplateId === template.id ? "active" : ""}
+              type="button"
+              onClick={() => onTemplateChange(template.id)}
+            >
+              <span>{template.name}</span>
+              <small>{template.description}</small>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="panel-section">
@@ -122,6 +150,9 @@ export default function ControlPanel({
           onClick={() => updateSettings({ text: { ...settings.text, content: defaultText } })}
         >
           填入预设文案
+        </button>
+        <button className="preset-button" type="button" onClick={onAutoFitText}>
+          一键适配横幅
         </button>
         <textarea
           value={settings.text.content}
