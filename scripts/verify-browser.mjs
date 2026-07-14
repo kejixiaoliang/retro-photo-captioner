@@ -95,7 +95,7 @@ async function makeSamplePng(page) {
 
 async function uploadSample(page) {
   const bytes = await makeSamplePng(page);
-  const input = page.locator("input[type=file]");
+  const input = page.locator(".empty-preview input[type=file]");
   await input.setInputFiles({
     name: "browser-verify-sample.png",
     mimeType: "image/png",
@@ -131,6 +131,7 @@ async function main() {
     log("checking desktop viewport");
     const desktop = await browser.newPage({ viewport: { width: 1440, height: 980 } });
     await waitForServer(desktop);
+    await desktop.screenshot({ path: path.join(artifactDir, "empty.png"), fullPage: true });
     await uploadSample(desktop);
     await desktop.screenshot({ path: path.join(artifactDir, "desktop.png"), fullPage: true });
 

@@ -431,6 +431,24 @@ code {
   border-radius: 8px;
   background: rgba(250, 246, 238, 0.62);
   text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.empty-preview:hover {
+  border-color: rgba(123, 7, 21, 0.62);
+  background: rgba(255, 250, 241, 0.78);
+  transform: translateY(-1px);
+}
+
+.empty-preview input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 .empty-preview div {

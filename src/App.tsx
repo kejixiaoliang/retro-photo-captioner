@@ -189,6 +189,7 @@ export default function App() {
             settings={settings}
             onRendered={handleRendered}
             onError={handlePreviewError}
+            onUploadFiles={handleUploadFiles}
             previewScale={previewScale}
           />
         </div>

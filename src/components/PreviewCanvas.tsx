@@ -7,10 +7,18 @@ interface PreviewCanvasProps {
   settings: RenderSettings;
   onRendered: (canvas: HTMLCanvasElement | null) => void;
   onError: (message: string) => void;
+  onUploadFiles: (files: Iterable<File> | null | undefined, source: "choose" | "drop" | "paste") => void;
   previewScale: number;
 }
 
-export default function PreviewCanvas({ image, settings, onRendered, onError, previewScale }: PreviewCanvasProps) {
+export default function PreviewCanvas({
+  image,
+  settings,
+  onRendered,
+  onError,
+  onUploadFiles,
+  previewScale
+}: PreviewCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -45,12 +53,27 @@ export default function PreviewCanvas({ image, settings, onRendered, onError, pr
 
   if (!image) {
     return (
-      <div className="empty-preview">
+      <label
+        className="empty-preview"
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          onUploadFiles(event.dataTransfer.files, "drop");
+        }}
+      >
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/bmp"
+          onChange={(event) => onUploadFiles(event.target.files, "choose")}
+        />
         <div>
           <span>上传一张照片</span>
-          <strong>红幅、文字和旧照滤镜会在这里实时合成</strong>
+          <strong>点击选择、拖拽到这里，或按 Ctrl+V 粘贴图片</strong>
         </div>
-      </div>
+      </label>
     );
   }
 
