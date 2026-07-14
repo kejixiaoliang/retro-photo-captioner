@@ -22,6 +22,7 @@ interface ControlPanelProps {
   canExport: boolean;
   activeTemplateId: EditorTemplateId;
   onUpload: (file: File | null) => void;
+  onUploadFiles: (files: Iterable<File> | null | undefined, source: "choose" | "drop" | "paste") => void;
   onSettingsChange: (settings: RenderSettings) => void;
   onExportSettingsChange: (settings: ExportSettings) => void;
   onTemplateChange: (templateId: EditorTemplateId) => void;
@@ -38,6 +39,7 @@ export default function ControlPanel({
   canExport,
   activeTemplateId,
   onUpload,
+  onUploadFiles,
   onSettingsChange,
   onExportSettingsChange,
   onTemplateChange,
@@ -54,7 +56,16 @@ export default function ControlPanel({
         <div>
           <span className="eyebrow">Canvas 本地处理</span>
           <h1>复古纪念照框幅</h1>
-          <p className="author-line">公众号：科技小亮AGI</p>
+          <p className="author-line">
+            作者：科技小亮AGI
+            <a
+              href="https://github.com/kejixiaoliang/retro-photo-captioner"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+          </p>
         </div>
         <Wand2 aria-hidden="true" />
       </header>
@@ -64,14 +75,24 @@ export default function ControlPanel({
           <ImagePlus aria-hidden="true" />
           图片
         </h2>
-        <label className="file-drop">
+        <label
+          className="file-drop"
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            onUploadFiles(event.dataTransfer.files, "drop");
+          }}
+        >
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp,image/bmp"
             onChange={(event) => onUpload(event.target.files?.[0] ?? null)}
           />
-          <span>{imageName ?? "选择本地图片"}</span>
-          <small>{imageSize ?? "PNG / JPG / WebP / BMP"}</small>
+          <span>{imageName ?? "选择、拖拽或粘贴图片"}</span>
+          <small>{imageSize ?? "PNG / JPG / WebP / BMP，支持 Ctrl+V 粘贴"}</small>
         </label>
         {status && <p className="status-text">{status}</p>}
       </section>

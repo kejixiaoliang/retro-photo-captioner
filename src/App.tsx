@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import PreviewCanvas from "./components/PreviewCanvas";
+import { getFirstImageFile } from "./lib/imageFiles";
 import { exportCanvas, getPreviewScale, renderCompositeCanvas } from "./lib/renderCanvas";
 import { initialExportSettings, initialRenderSettings } from "./lib/presets";
 import { applyTemplateToSettings } from "./lib/templates";
@@ -44,8 +45,11 @@ export default function App() {
   }, [image]);
 
   const handleUpload = useCallback(
-    (file: File | null) => {
-      if (!file) return;
+    (file: File | null, source: "choose" | "drop" | "paste" = "choose") => {
+      if (!file) {
+        if (source !== "choose") setStatus("没有找到可上传的图片。");
+        return;
+      }
       if (!file.type.startsWith("image/")) {
         setStatus("请选择图片文件。");
         return;
@@ -60,7 +64,12 @@ export default function App() {
         setImageName(file.name);
 
         const pixels = nextImage.naturalWidth * nextImage.naturalHeight;
-        setStatus(pixels > 18_000_000 ? "图片较大，滤镜预览可能需要一点时间。" : "图片已载入。");
+        const sourceLabel = source === "drop" ? "拖拽" : source === "paste" ? "粘贴" : "选择";
+        setStatus(
+          pixels > 18_000_000
+            ? `${sourceLabel}图片已载入，图片较大，滤镜预览可能需要一点时间。`
+            : `${sourceLabel}图片已载入。`
+        );
       };
       nextImage.onerror = () => {
         URL.revokeObjectURL(url);
@@ -70,6 +79,25 @@ export default function App() {
     },
     [objectUrl]
   );
+
+  const handleUploadFiles = useCallback(
+    (files: Iterable<File> | null | undefined, source: "choose" | "drop" | "paste" = "choose") => {
+      handleUpload(getFirstImageFile(files), source);
+    },
+    [handleUpload]
+  );
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const file = getFirstImageFile(event.clipboardData?.files);
+      if (!file) return;
+      event.preventDefault();
+      handleUpload(file, "paste");
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [handleUpload]);
 
   const handleRendered = useCallback((canvas: HTMLCanvasElement | null) => {
     previewCanvasRef.current = canvas;
@@ -143,6 +171,7 @@ export default function App() {
         canExport={Boolean(image)}
         activeTemplateId={activeTemplateId}
         onUpload={handleUpload}
+        onUploadFiles={handleUploadFiles}
         onSettingsChange={setSettings}
         onExportSettingsChange={setExportSettings}
         onTemplateChange={handleTemplateChange}

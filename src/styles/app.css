@@ -68,10 +68,22 @@ button {
 }
 
 .author-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 7px;
   color: #7a0714;
   font-size: 13px;
   font-weight: 700;
+}
+
+.author-line a {
+  color: #1f5a54;
+  text-decoration: none;
+}
+
+.author-line a:hover {
+  text-decoration: underline;
 }
 
 h1,

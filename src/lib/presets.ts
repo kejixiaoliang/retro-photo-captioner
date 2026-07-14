@@ -1,7 +1,7 @@
 import type { ExportSettings, FilterPresetMeta, FontPreset, RenderSettings } from "./types";
 
 export const defaultText =
-  "公元二零二六年，某某某同志、某某某同志游黄山\n某某某（左）、某某某（右）";
+  "公元二零二六年，某某某、某某某于某某地方合影留念\n某某某（左）、某某某（右）";
 
 export const fontPresets: FontPreset[] = [
   {
