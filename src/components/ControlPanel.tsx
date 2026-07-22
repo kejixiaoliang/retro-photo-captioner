@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   AlignCenter,
   Download,
@@ -12,6 +13,21 @@ import {
 import { defaultText, filterPresetMetas, fontPresets } from "../lib/presets";
 import { editorTemplates } from "../lib/templates";
 import type { EditorTemplateId, ExportSettings, RenderSettings } from "../lib/types";
+
+type MobilePanelId = "image" | "template" | "banner" | "text" | "filter" | "export";
+
+const mobilePanels: Array<{
+  id: MobilePanelId;
+  label: string;
+  icon: typeof ImagePlus;
+}> = [
+  { id: "image", label: "图片", icon: ImagePlus },
+  { id: "template", label: "模板", icon: Sparkles },
+  { id: "banner", label: "框幅", icon: SlidersHorizontal },
+  { id: "text", label: "文字", icon: Type },
+  { id: "filter", label: "滤镜", icon: AlignCenter },
+  { id: "export", label: "导出", icon: Download }
+];
 
 interface ControlPanelProps {
   settings: RenderSettings;
@@ -50,6 +66,17 @@ export default function ControlPanel({
   onAutoFitText,
   onExport
 }: ControlPanelProps) {
+  const [activeMobilePanel, setActiveMobilePanel] = useState<MobilePanelId>("image");
+
+  useEffect(() => {
+    if (canExport && activeMobilePanel === "image") {
+      setActiveMobilePanel("text");
+    }
+    if (!canExport && activeMobilePanel !== "image") {
+      setActiveMobilePanel("image");
+    }
+  }, [activeMobilePanel, canExport]);
+
   const updateSettings = (patch: Partial<RenderSettings>) => {
     onSettingsChange({ ...settings, ...patch });
   };
@@ -67,7 +94,30 @@ export default function ControlPanel({
         <Wand2 aria-hidden="true" />
       </header>
 
-      <section className="panel-section">
+      <div className="mobile-panel-summary" aria-live="polite">
+        <span>{imageName ?? "先上传图片"}</span>
+        <strong>{status || "调整时上方会实时预览"}</strong>
+      </div>
+
+      <nav className="mobile-tabs" aria-label="移动端编辑面板">
+        {mobilePanels.map((panel) => {
+          const Icon = panel.icon;
+          return (
+            <button
+              key={panel.id}
+              className={activeMobilePanel === panel.id ? "active" : ""}
+              type="button"
+              onClick={() => setActiveMobilePanel(panel.id)}
+            >
+              <Icon aria-hidden="true" />
+              <span>{panel.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="panel-stack">
+      <section className={`panel-section ${activeMobilePanel === "image" ? "mobile-active" : ""}`}>
         <h2>
           <ImagePlus aria-hidden="true" />
           图片
@@ -94,7 +144,7 @@ export default function ControlPanel({
         {status && <p className="status-text">{status}</p>}
       </section>
 
-      <section className="panel-section">
+      <section className={`panel-section ${activeMobilePanel === "template" ? "mobile-active" : ""}`}>
         <h2>
           <Sparkles aria-hidden="true" />
           模板
@@ -114,7 +164,7 @@ export default function ControlPanel({
         </div>
       </section>
 
-      <section className="panel-section">
+      <section className={`panel-section ${activeMobilePanel === "banner" ? "mobile-active" : ""}`}>
         <h2>
           <SlidersHorizontal aria-hidden="true" />
           框幅
@@ -157,7 +207,7 @@ export default function ControlPanel({
         </label>
       </section>
 
-      <section className="panel-section">
+      <section className={`panel-section ${activeMobilePanel === "text" ? "mobile-active" : ""}`}>
         <h2>
           <Type aria-hidden="true" />
           文字
@@ -257,7 +307,7 @@ export default function ControlPanel({
         </label>
       </section>
 
-      <section className="panel-section">
+      <section className={`panel-section ${activeMobilePanel === "filter" ? "mobile-active" : ""}`}>
         <h2>
           <AlignCenter aria-hidden="true" />
           滤镜
@@ -326,7 +376,7 @@ export default function ControlPanel({
         </label>
       </section>
 
-      <section className="panel-section export-section">
+      <section className={`panel-section export-section ${activeMobilePanel === "export" ? "mobile-active" : ""}`}>
         <h2>
           <Download aria-hidden="true" />
           导出
@@ -383,6 +433,7 @@ export default function ControlPanel({
           </div>
         )}
       </section>
+      </div>
     </aside>
   );
 }

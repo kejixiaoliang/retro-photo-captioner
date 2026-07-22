@@ -168,7 +168,7 @@ export default function App() {
   }, [exportFileName, exportSettings, image, settings]);
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${image ? "has-image" : "is-empty"}`}>
       <ControlPanel
         settings={settings}
         exportSettings={exportSettings}
