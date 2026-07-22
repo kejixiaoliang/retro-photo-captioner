@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import PreviewCanvas from "./components/PreviewCanvas";
 import { getFirstImageFile } from "./lib/imageFiles";
-import { exportCanvas, getPreviewScale, renderCompositeCanvas } from "./lib/renderCanvas";
+import { getCanvasDataUrl, getPreviewScale, renderCompositeCanvas } from "./lib/renderCanvas";
 import { initialExportSettings, initialRenderSettings } from "./lib/presets";
 import { applyTemplateToSettings } from "./lib/templates";
 import { fitTextToBanner, splitTextForFit } from "./lib/textFit";
@@ -16,7 +16,12 @@ export default function App() {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [exportPreviewUrl, setExportPreviewUrl] = useState<string | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const exportFileName = useMemo(
+    () => getExportFileName(imageName, exportSettings.format),
+    [exportSettings.format, imageName]
+  );
 
   useEffect(() => {
     return () => {
@@ -153,12 +158,14 @@ export default function App() {
         settings,
         outputScale: exportSettings.scale
       });
-      await exportCanvas(outputCanvas, exportSettings);
-      setStatus("已生成下载文件。");
+      const dataUrl = getCanvasDataUrl(outputCanvas, exportSettings);
+      setExportPreviewUrl(dataUrl);
+      triggerDownload(dataUrl, exportFileName);
+      setStatus("已生成成图，并开始下载。");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "导出失败。");
     }
-  }, [exportSettings, image, settings]);
+  }, [exportFileName, exportSettings, image, settings]);
 
   return (
     <main className="app-shell">
@@ -177,6 +184,8 @@ export default function App() {
         onTemplateChange={handleTemplateChange}
         onAutoFitText={handleAutoFitText}
         onExport={handleExport}
+        exportPreviewUrl={exportPreviewUrl}
+        exportFileName={exportFileName}
       />
       <section className="preview-stage" aria-label="实时预览">
         <div className="stage-topline">
@@ -196,4 +205,24 @@ export default function App() {
       </section>
     </main>
   );
+}
+
+function getExportFileName(imageName: string | null, format: ExportSettings["format"]) {
+  const extension = format === "jpeg" ? "jpg" : "png";
+  const baseName = imageName?.replace(/\.[^.]+$/, "") || "retro-photo";
+  const safeName = baseName
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+  return `${safeName || "retro-photo"}-framed.${extension}`;
+}
+
+function triggerDownload(dataUrl: string, fileName: string) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }

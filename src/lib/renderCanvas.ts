@@ -106,29 +106,14 @@ export function renderCompositeCanvas({ canvas, image, settings, outputScale = 1
   return target;
 }
 
-export async function exportCanvas(canvas: HTMLCanvasElement, settings: ExportSettings) {
+export function getCanvasDataUrl(canvas: HTMLCanvasElement, settings: ExportSettings) {
   const mimeType = settings.format === "png" ? "image/png" : "image/jpeg";
   const quality = settings.format === "jpeg" ? settings.jpegQuality : undefined;
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (value) => {
-        if (value) resolve(value);
-        else reject(new Error("Unable to export canvas."));
-      },
-      mimeType,
-      quality
-    );
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  link.href = url;
-  link.download = `retro-photo-${stamp}.${settings.format === "png" ? "png" : "jpg"}`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  const dataUrl = canvas.toDataURL(mimeType, quality);
+  if (!dataUrl || dataUrl === "data:,") {
+    throw new Error("Unable to export canvas.");
+  }
+  return dataUrl;
 }
 
 function drawBanner(

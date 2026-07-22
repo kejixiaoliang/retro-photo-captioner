@@ -21,6 +21,8 @@ interface ControlPanelProps {
   status: string;
   canExport: boolean;
   activeTemplateId: EditorTemplateId;
+  exportPreviewUrl: string | null;
+  exportFileName: string;
   onUpload: (file: File | null) => void;
   onUploadFiles: (files: Iterable<File> | null | undefined, source: "choose" | "drop" | "paste") => void;
   onSettingsChange: (settings: RenderSettings) => void;
@@ -38,6 +40,8 @@ export default function ControlPanel({
   status,
   canExport,
   activeTemplateId,
+  exportPreviewUrl,
+  exportFileName,
   onUpload,
   onUploadFiles,
   onSettingsChange,
@@ -58,13 +62,6 @@ export default function ControlPanel({
           <h1>复古纪念照框幅</h1>
           <p className="author-line">
             作者：科技小亮AGI
-            <a
-              href="https://github.com/kejixiaoliang/retro-photo-captioner"
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub
-            </a>
           </p>
         </div>
         <Wand2 aria-hidden="true" />
@@ -374,8 +371,17 @@ export default function ControlPanel({
         />
         <button className="export-button" type="button" disabled={!canExport} onClick={onExport}>
           <Download aria-hidden="true" />
-          下载成图
+          生成成图
         </button>
+        {exportPreviewUrl && (
+          <div className="export-preview">
+            <img src={exportPreviewUrl} alt="生成结果预览" />
+            <a className="download-link" href={exportPreviewUrl} download={exportFileName}>
+              <Download aria-hidden="true" />
+              下载成图
+            </a>
+          </div>
+        )}
       </section>
     </aside>
   );

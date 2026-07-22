@@ -14,6 +14,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 button,
@@ -372,6 +374,40 @@ code {
 }
 
 .export-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.export-preview {
+  margin-top: 12px;
+  padding: 8px;
+  border: 1px solid rgba(70, 55, 44, 0.16);
+  border-radius: 8px;
+  background: #fffaf1;
+}
+
+.export-preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  margin-top: 10px;
+  border-radius: 6px;
+  color: #fff8ef;
+  background: #780512;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.download-link svg {
   width: 17px;
   height: 17px;
 }
