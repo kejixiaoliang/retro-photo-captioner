@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   AlignCenter,
-  Download,
   ImagePlus,
   Minus,
   Plus,
+  Save,
   SlidersHorizontal,
   Sparkles,
   Type,
@@ -26,8 +26,10 @@ const mobilePanels: Array<{
   { id: "banner", label: "框幅", icon: SlidersHorizontal },
   { id: "text", label: "文字", icon: Type },
   { id: "filter", label: "滤镜", icon: AlignCenter },
-  { id: "export", label: "导出", icon: Download }
+  { id: "export", label: "导出", icon: Save }
 ];
+
+const isMiniToolBuild = import.meta.env.MODE === "minitool";
 
 interface ControlPanelProps {
   settings: RenderSettings;
@@ -378,7 +380,7 @@ export default function ControlPanel({
 
       <section className={`panel-section export-section ${activeMobilePanel === "export" ? "mobile-active" : ""}`}>
         <h2>
-          <Download aria-hidden="true" />
+          <Save aria-hidden="true" />
           导出
         </h2>
         <div className="segmented">
@@ -420,16 +422,22 @@ export default function ControlPanel({
           onChange={(scale) => onExportSettingsChange({ ...exportSettings, scale: scale / 100 })}
         />
         <button className="export-button" type="button" disabled={!canExport} onClick={onExport}>
-          <Download aria-hidden="true" />
-          生成成图
+          <Save aria-hidden="true" />
+          {isMiniToolBuild ? "生成预览" : "生成成图"}
         </button>
         {exportPreviewUrl && (
           <div className="export-preview">
             <img src={exportPreviewUrl} alt="生成结果预览" />
-            <a className="download-link" href={exportPreviewUrl} download={exportFileName}>
-              <Download aria-hidden="true" />
-              下载成图
-            </a>
+            {isMiniToolBuild ? (
+              <p className="export-note">
+                当前小工具容器不支持文件下载。成图已在上方生成，可在平台内查看后截图保存。
+              </p>
+            ) : (
+              <a className="result-action" href={exportPreviewUrl} download={exportFileName}>
+                <Save aria-hidden="true" />
+                下载成图
+              </a>
+            )}
           </div>
         )}
       </section>
