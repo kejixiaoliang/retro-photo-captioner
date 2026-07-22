@@ -8,6 +8,8 @@ import { applyTemplateToSettings } from "./lib/templates";
 import { fitTextToBanner, splitTextForFit } from "./lib/textFit";
 import type { EditorTemplateId, ExportSettings, RenderSettings } from "./lib/types";
 
+const isMiniToolBuild = import.meta.env.MODE === "minitool";
+
 export default function App() {
   const [settings, setSettings] = useState<RenderSettings>(initialRenderSettings);
   const [exportSettings, setExportSettings] = useState<ExportSettings>(initialExportSettings);
@@ -160,8 +162,12 @@ export default function App() {
       });
       const dataUrl = getCanvasDataUrl(outputCanvas, exportSettings);
       setExportPreviewUrl(dataUrl);
-      triggerDownload(dataUrl, exportFileName);
-      setStatus("已生成成图，并开始下载。");
+      if (isMiniToolBuild) {
+        setStatus("已生成成图预览。小工具容器不支持文件下载，请在预览中查看成图并截图保存。");
+      } else {
+        triggerDownload(dataUrl, exportFileName);
+        setStatus("已生成成图，并开始下载。");
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "导出失败。");
     }
